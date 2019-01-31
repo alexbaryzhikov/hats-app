@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "837984070375",
+    "firebase_url": "https://hatsapp-c5a4e.firebaseio.com",
+    "project_id": "hatsapp-c5a4e",
+    "storage_bucket": "hatsapp-c5a4e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837984070375:android:212a2d2e816fd1d0",
+        "android_client_info": {
+          "package_name": "com.alexbaryzhikov.hatsapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "837984070375-mgob7fnlb209c8viqvhi3a79sj6le067.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alexbaryzhikov.hatsapp",
+            "certificate_hash": "5c778cb9979bea6c5fd9a8f1a6bffdbe6efa1d89"
+          }
+        },
+        {
+          "client_id": "837984070375-369vbo9d1gv2pl1pjecemkjl0ts0f486.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOR-dNSx6RayRardbySNOrR6djJnTNWjU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "837984070375-369vbo9d1gv2pl1pjecemkjl0ts0f486.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

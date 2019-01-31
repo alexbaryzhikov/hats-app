@@ -1,0 +1,23 @@
+/build
+/captures
+.DS_Store
+.externalNativeBuild
+.gradle
+.idea
+.navigation
+*.ap_
+*.apk
+*.class
+*.dex
+*.iml
+/local.properties
+
+# Generated files
+bin/
+gen/
+obj/
+
+# Publishing materials
+publishing/
+
+

@@ -57,4 +57,3 @@ def gitVersion() {
     println "version $v"
     return v
 }
-

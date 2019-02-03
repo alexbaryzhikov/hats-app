@@ -10,7 +10,7 @@
 
     <EditText
         android:id="@+id/vPhoneNumber"
-        android:layout_width="0dp"
+        android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:hint="@string/phone_number"
         android:inputType="phone"
@@ -23,7 +23,7 @@
 
     <EditText
         android:id="@+id/vCode"
-        android:layout_width="0dp"
+        android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:hint="@string/code"
@@ -38,7 +38,7 @@
         android:id="@+id/vSend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="24dp"
         android:text="@string/send"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

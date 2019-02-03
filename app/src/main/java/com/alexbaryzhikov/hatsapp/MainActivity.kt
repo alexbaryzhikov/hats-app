@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
         FirebaseApp.initializeApp(this)
         auth.setLanguageCode("en") // language of auth operations
-        userIsLoggedIn() // if user is logged in go straight to NextActivity
+        userIsLoggedIn() // if user is logged in go straight to HatsActivity
 
         vSend.setOnClickListener {
             if (storedVerificationId == null) {
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
     private fun userIsLoggedIn() {
         val user = auth.currentUser
         if (user != null) {
-            startActivity(Intent(applicationContext, NextActivity::class.java))
+            startActivity(Intent(applicationContext, HatsActivity::class.java))
             finish()
             return
         }

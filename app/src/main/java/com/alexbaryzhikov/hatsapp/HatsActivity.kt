@@ -5,15 +5,19 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.android.synthetic.main.activity_next.*
+import kotlinx.android.synthetic.main.activity_hats.*
 
-private const val TAG = "NextActivity"
+private const val TAG = "HatsActivity"
 
-class NextActivity : AppCompatActivity() {
+class HatsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_next)
+        setContentView(R.layout.activity_hats)
+
+        vFindUser.setOnClickListener {
+            startActivity(Intent(applicationContext, FindUserActivity::class.java))
+        }
 
         vLogout.setOnClickListener {
             Log.d(TAG, "Signing out...")

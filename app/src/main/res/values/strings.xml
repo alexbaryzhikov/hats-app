@@ -6,4 +6,6 @@
     <string name="logout">Logout</string>
     <string name="verify_code">Verify code</string>
     <string name="find_user">Find user</string>
+    <string name="name">name</string>
+    <string name="phone">phone</string>
 </resources>

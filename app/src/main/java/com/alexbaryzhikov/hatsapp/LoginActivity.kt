@@ -2,7 +2,9 @@ package com.alexbaryzhikov.hatsapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
@@ -11,12 +13,16 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 
-private const val TAG = "MainActivity"
+private const val TAG = "LoginActivity"
 
-class MainActivity : AppCompatActivity() {
+class LoginActivity : AppCompatActivity() {
 
     private val auth = FirebaseAuth.getInstance()
     private val phoneAuth = PhoneAuthProvider.getInstance()
@@ -55,8 +61,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onCodeSent(
-                verificationId: String?,
-                token: PhoneAuthProvider.ForceResendingToken
+            verificationId: String?,
+            token: PhoneAuthProvider.ForceResendingToken
         ) {
             // The SMS verification code has been sent to the provided phone number, we
             // now need to ask the user to enter the code and then construct a credential
@@ -91,11 +97,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun startVerification() {
         phoneAuth.verifyPhoneNumber(
-                vPhoneNumber.text.toString(), // phone number to verify
-                60, // timeout duration
-                TimeUnit.SECONDS, // unit of timeout
-                this, // activity (for callback binding)
-                callbacks) // OnVerificationStateChangedCallbacks
+            vPhoneNumber.text.toString(), // phone number to verify
+            60, // timeout duration
+            TimeUnit.SECONDS, // unit of timeout
+            this, // activity (for callback binding)
+            callbacks // OnVerificationStateChangedCallbacks
+        )
     }
 
     private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
@@ -104,7 +111,26 @@ class MainActivity : AppCompatActivity() {
             if (task.isSuccessful) {
                 // Sign in success, update UI with the signed-in user's information
                 Log.d(TAG, "signInWithCredential: success")
-                userIsLoggedIn()
+
+                val user = auth.currentUser ?: return@addOnCompleteListener
+                val userDb = FirebaseDatabase.getInstance().reference.child("user").child(user.uid)
+                userDb.addListenerForSingleValueEvent(object : ValueEventListener {
+
+                    override fun onDataChange(data: DataSnapshot) {
+                        if (!data.exists()) {
+                            // Add user to DB if it didn't exist
+                            val userMap = mutableMapOf<String, Any?>(
+                                "phone" to user.phoneNumber,
+                                "name" to user.phoneNumber // let the user enter the name later
+                            )
+                            userDb.updateChildren(userMap)
+                        }
+                        userIsLoggedIn()
+                    }
+
+                    override fun onCancelled(e: DatabaseError) {}
+                })
+
             } else {
                 // Sign in failed, display a message and update the UI
                 Log.w(TAG, "signInWithCredential: failure", task.exception)
@@ -127,6 +153,11 @@ class MainActivity : AppCompatActivity() {
     private fun verifyCode() {
         val verificationId: String = storedVerificationId ?: return
         val code = vCode.text.toString()
+        if (TextUtils.isEmpty(code)) {
+            Log.e(TAG, "verifyCode: Empty code!")
+            Toast.makeText(this, "Please enter verification code", Toast.LENGTH_LONG).show()
+            return
+        }
         val credential = PhoneAuthProvider.getCredential(verificationId, code)
         signInWithPhoneAuthCredential(credential)
     }

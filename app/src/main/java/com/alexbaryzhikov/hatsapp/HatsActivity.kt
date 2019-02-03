@@ -1,6 +1,9 @@
 package com.alexbaryzhikov.hatsapp
 
+import android.Manifest.permission.READ_CONTACTS
+import android.Manifest.permission.WRITE_CONTACTS
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -22,10 +25,18 @@ class HatsActivity : AppCompatActivity() {
         vLogout.setOnClickListener {
             Log.d(TAG, "Signing out...")
             FirebaseAuth.getInstance().signOut()
-            startActivity(Intent(applicationContext, MainActivity::class.java).apply {
+            startActivity(Intent(applicationContext, LoginActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             })
             finish()
+        }
+
+        getPermissions()
+    }
+
+    private fun getPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(arrayOf(READ_CONTACTS, WRITE_CONTACTS), 1)
         }
     }
 }

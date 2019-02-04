@@ -16,7 +16,7 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
 
-        <activity android:name=".LoginActivity">
+        <activity android:name=".activities.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -24,9 +24,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".HatsActivity" />
+        <activity android:name=".activities.HatsActivity" />
 
-        <activity android:name=".FindUserActivity" />
+        <activity android:name=".activities.FindUserActivity" />
 
     </application>
 

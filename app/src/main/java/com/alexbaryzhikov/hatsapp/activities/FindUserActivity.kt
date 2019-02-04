@@ -1,4 +1,4 @@
-package com.alexbaryzhikov.hatsapp
+package com.alexbaryzhikov.hatsapp.activities
 
 import android.content.Context
 import android.os.Bundle
@@ -12,9 +12,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.alexbaryzhikov.hatsapp.R
+import com.alexbaryzhikov.hatsapp.model.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_find_user.*
 import kotlinx.android.synthetic.main.item_user.view.*
@@ -60,7 +61,7 @@ class FindUserActivity : AppCompatActivity() {
     /** Queries DB for users equivalent to [contact] and adds them to the [UserListAdapter]. */
     private fun getUserDetails(contact: User) {
         val adapter = vUserList.adapter as? UserListAdapter ?: return
-        val userDb = FirebaseDatabase.getInstance().reference.child("user")
+        val userDb = db.reference.child("user")
         val query = userDb.orderByChild("phone").equalTo(contact.phone)
         query.addListenerForSingleValueEvent(object : ValueEventListener {
 
@@ -71,8 +72,9 @@ class FindUserActivity : AppCompatActivity() {
                 for (child in data.children) {
                     phone = child.child("phone").value?.toString() ?: phone
                     name = child.child("name").value?.toString() ?: name
-
-                    adapter.users += User(name, phone)
+                    // Change name to contact name if user hasn't customized it
+                    if (name.isEmpty() || name == phone) name = contact.name
+                    adapter.users += User(child.key!!, name, phone)
                 }
                 adapter.notifyDataSetChanged()
             }
@@ -95,12 +97,22 @@ private class UserListAdapter(val users: MutableList<User> = mutableListOf()) : 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         holder.vName.text = users[position].name
         holder.vPhone.text = users[position].phone
+        holder.vUser.setOnClickListener {
+            // Create chat with unique id and add reference to it to both users
+            val uid = auth.uid
+            val key = db.reference.child("chat").push().key
+            if (key != null && uid != null) {
+                db.reference.child("user").child(uid).child("chat").child(key).setValue(true)
+                db.reference.child("user").child(users[position].uid).child("chat").child(key).setValue(true)
+            }
+        }
     }
 
     override fun getItemCount(): Int = users.size
 }
 
 private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    val vUser: ViewGroup = itemView.vUser
     val vName: TextView = itemView.vName
     val vPhone: TextView = itemView.vPhone
 }

@@ -1,4 +1,4 @@
-package com.alexbaryzhikov.hatsapp
+package com.alexbaryzhikov.hatsapp.activities
 
 import android.content.Intent
 import android.os.Bundle
@@ -6,16 +6,18 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.alexbaryzhikov.hatsapp.R
+import com.alexbaryzhikov.hatsapp.model.auth
+import com.alexbaryzhikov.hatsapp.model.db
+import com.alexbaryzhikov.hatsapp.model.phoneAuth
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
@@ -24,8 +26,6 @@ private const val TAG = "LoginActivity"
 
 class LoginActivity : AppCompatActivity() {
 
-    private val auth = FirebaseAuth.getInstance()
-    private val phoneAuth = PhoneAuthProvider.getInstance()
     private var storedVerificationId: String? = null
     private var resendToken: PhoneAuthProvider.ForceResendingToken? = null
 
@@ -113,7 +113,7 @@ class LoginActivity : AppCompatActivity() {
                 Log.d(TAG, "signInWithCredential: success")
 
                 val user = auth.currentUser ?: return@addOnCompleteListener
-                val userDb = FirebaseDatabase.getInstance().reference.child("user").child(user.uid)
+                val userDb = db.reference.child("user").child(user.uid)
                 userDb.addListenerForSingleValueEvent(object : ValueEventListener {
 
                     override fun onDataChange(data: DataSnapshot) {

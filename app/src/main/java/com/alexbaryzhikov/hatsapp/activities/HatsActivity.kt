@@ -1,4 +1,4 @@
-package com.alexbaryzhikov.hatsapp
+package com.alexbaryzhikov.hatsapp.activities
 
 import android.Manifest.permission.READ_CONTACTS
 import android.Manifest.permission.WRITE_CONTACTS
@@ -7,7 +7,8 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.auth.FirebaseAuth
+import com.alexbaryzhikov.hatsapp.R
+import com.alexbaryzhikov.hatsapp.model.auth
 import kotlinx.android.synthetic.main.activity_hats.*
 
 private const val TAG = "HatsActivity"
@@ -24,7 +25,7 @@ class HatsActivity : AppCompatActivity() {
 
         vLogout.setOnClickListener {
             Log.d(TAG, "Signing out...")
-            FirebaseAuth.getInstance().signOut()
+            auth.signOut()
             startActivity(Intent(applicationContext, LoginActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             })

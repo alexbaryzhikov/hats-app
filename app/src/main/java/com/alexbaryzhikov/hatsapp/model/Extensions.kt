@@ -1,4 +1,4 @@
-package com.alexbaryzhikov.hatsapp
+package com.alexbaryzhikov.hatsapp.model
 
 import android.content.ContentResolver
 import android.provider.ContactsContract
@@ -11,6 +11,7 @@ fun ContentResolver.getContacts(): List<User> = query(
         List(count) {
             moveToNext()
             User(
+                "",
                 getString(getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)),
                 getString(getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
             )
@@ -28,5 +29,5 @@ fun String.toPhonePrefix(): String = countryCodes[this] ?: ""
 fun User.normalizePhone(defaultPrefix: String): User {
     val normalized = phone.filterNot { it in charArrayOf(' ', '-', '(', ')') }
         .let { if (it[0] != '+') defaultPrefix + it else it }
-    return User(name, normalized)
+    return User(uid, name, normalized)
 }

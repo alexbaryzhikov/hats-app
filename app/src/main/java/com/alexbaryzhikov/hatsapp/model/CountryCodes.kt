@@ -1,4 +1,4 @@
-package com.alexbaryzhikov.hatsapp
+package com.alexbaryzhikov.hatsapp.model
 
 val countryCodes = mapOf(
     "" to "",

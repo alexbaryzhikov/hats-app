@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activities.HatsActivity" />
+        <activity android:name=".activities.HomeActivity" />
 
         <activity android:name=".activities.FindUserActivity" />
 

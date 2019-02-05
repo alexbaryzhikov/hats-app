@@ -19,7 +19,7 @@ import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_login.*
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "LoginActivity"
@@ -80,11 +80,11 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_login)
 
         FirebaseApp.initializeApp(this)
         auth.setLanguageCode("en") // language of auth operations
-        userIsLoggedIn() // if user is logged in go straight to HatsActivity
+        userIsLoggedIn() // if user is logged in go straight to HomeActivity
 
         vSend.setOnClickListener {
             if (storedVerificationId == null) {
@@ -144,7 +144,7 @@ class LoginActivity : AppCompatActivity() {
     private fun userIsLoggedIn() {
         val user = auth.currentUser
         if (user != null) {
-            startActivity(Intent(applicationContext, HatsActivity::class.java))
+            startActivity(Intent(applicationContext, HomeActivity::class.java))
             finish()
             return
         }

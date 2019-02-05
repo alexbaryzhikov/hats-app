@@ -5,13 +5,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="16dp"
     tools:context=".activities.FindUserActivity">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/vUserList"
-        android:layout_width="match_parent"
+        android:id="@+id/vUsers"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="8dp"
         android:scrollbars="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

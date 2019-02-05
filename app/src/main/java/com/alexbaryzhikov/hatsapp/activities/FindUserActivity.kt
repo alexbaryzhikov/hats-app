@@ -29,27 +29,27 @@ class FindUserActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_find_user)
 
-        initUserList()
-        fillUserList()
+        initUsers()
+        fillUsers()
     }
 
-    /** Initializes UserList View and [UserListAdapter]. */
-    private fun initUserList() {
-        with(vUserList) {
+    /** Initializes Users View and [UserAdapter]. */
+    private fun initUsers() {
+        with(vUsers) {
             setHasFixedSize(false)
             isNestedScrollingEnabled = false
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
-            adapter = UserListAdapter()
+            adapter = UserAdapter()
         }
     }
 
     /**
-     * Fills [UserListAdapter] with users.
+     * Fills [UserAdapter] with users.
      *
      * First it gets contacts from the device, then checks each contact if it's present id DB, and if positive --
      * adds it to the adapter list.
      */
-    private fun fillUserList() {
+    private fun fillUsers() {
         // Country phone prefix for numbers without one.
         // They are assumed to have prefix equivalent to MCC of the current provider.
         val phonePrefix: String = with(getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager) {
@@ -58,23 +58,23 @@ class FindUserActivity : AppCompatActivity() {
         contentResolver.getContacts().map { it.normalizePhone(phonePrefix) }.forEach(::getUserDetails)
     }
 
-    /** Queries DB for users equivalent to [contact] and adds them to the [UserListAdapter]. */
+    /** Queries DB for users equivalent to [contact] and adds them to the [UserAdapter]. */
     private fun getUserDetails(contact: User) {
-        val adapter = vUserList.adapter as? UserListAdapter ?: return
+        val adapter = vUsers.adapter as? UserAdapter ?: return
         val userDb = db.reference.child("user")
         val query = userDb.orderByChild("phone").equalTo(contact.phone)
+
         query.addListenerForSingleValueEvent(object : ValueEventListener {
 
             override fun onDataChange(data: DataSnapshot) {
                 if (!data.exists()) return
-                var phone = ""
-                var name = ""
                 for (child in data.children) {
-                    phone = child.child("phone").value?.toString() ?: phone
-                    name = child.child("name").value?.toString() ?: name
+                    val key = child.key ?: continue
+                    val phone = child.child("phone").value?.toString() ?: continue
+                    var name = child.child("name").value?.toString() ?: ""
                     // Change name to contact name if user hasn't customized it
                     if (name.isEmpty() || name == phone) name = contact.name
-                    adapter.users += User(child.key!!, name, phone)
+                    adapter.users += User(key, name, phone)
                 }
                 adapter.notifyDataSetChanged()
             }
@@ -84,7 +84,7 @@ class FindUserActivity : AppCompatActivity() {
     }
 }
 
-private class UserListAdapter(val users: MutableList<User> = mutableListOf()) : RecyclerView.Adapter<UserViewHolder>() {
+private class UserAdapter(val users: MutableList<User> = mutableListOf()) : RecyclerView.Adapter<UserViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_user, parent, false).apply {

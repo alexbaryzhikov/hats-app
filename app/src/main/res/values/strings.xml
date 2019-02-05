@@ -8,4 +8,5 @@
     <string name="find_user">Find user</string>
     <string name="name">name</string>
     <string name="phone">phone</string>
+    <string name="title">title</string>
 </resources>

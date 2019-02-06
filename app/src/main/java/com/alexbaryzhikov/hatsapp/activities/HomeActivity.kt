@@ -104,7 +104,11 @@ private class ChatAdapter(val chats: MutableList<Chat> = mutableListOf()) : Recy
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         holder.vTitle.text = chats[position].id
-        holder.vChat.setOnClickListener {}
+        holder.vChat.setOnClickListener {
+            val bundle = Bundle().apply { putString("chatId", chats[position].id) }
+            val intent = Intent(it.context, ChatActivity::class.java).apply { putExtras(bundle) }
+            it.context.startActivity(intent)
+        }
     }
 
     override fun getItemCount(): Int = chats.size

@@ -27,6 +27,8 @@ private const val TAG = "HomeActivity"
 
 class HomeActivity : AppCompatActivity() {
 
+    private val chatAdapter = ChatAdapter()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
@@ -55,26 +57,25 @@ class HomeActivity : AppCompatActivity() {
             setHasFixedSize(false)
             isNestedScrollingEnabled = false
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
-            adapter = ChatAdapter()
+            adapter = chatAdapter
         }
     }
 
     /** Fills [ChatAdapter] with chats. */
     private fun fillChats() {
         val uid = auth.uid ?: return
-        val adapter = vChats.adapter as? ChatAdapter ?: return
         val chatDb = db.reference.child("user").child(uid).child("chat")
 
         chatDb.addValueEventListener(object : ValueEventListener {
 
             override fun onDataChange(data: DataSnapshot) {
                 if (!data.exists()) return
-                adapter.chats.clear()
+                chatAdapter.chats.clear()
                 for (chat in data.children) {
                     val key = chat.key ?: continue
-                    adapter.chats += Chat(key)
+                    chatAdapter.chats += Chat(key)
                 }
-                adapter.notifyDataSetChanged()
+                chatAdapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(e: DatabaseError) {}

@@ -25,6 +25,8 @@ import android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER as PHONE_N
 
 class FindUserActivity : AppCompatActivity() {
 
+    private val userAdapter = UserAdapter()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_find_user)
@@ -39,7 +41,7 @@ class FindUserActivity : AppCompatActivity() {
             setHasFixedSize(false)
             isNestedScrollingEnabled = false
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
-            adapter = UserAdapter()
+            adapter = userAdapter
         }
     }
 
@@ -60,7 +62,6 @@ class FindUserActivity : AppCompatActivity() {
 
     /** Queries DB for users equivalent to [contact] and adds them to the [UserAdapter]. */
     private fun getUserDetails(contact: User) {
-        val adapter = vUsers.adapter as? UserAdapter ?: return
         val userDb = db.reference.child("user")
         val query = userDb.orderByChild("phone").equalTo(contact.phone)
 
@@ -74,9 +75,9 @@ class FindUserActivity : AppCompatActivity() {
                     var name = child.child("name").value?.toString() ?: ""
                     // Change name to contact name if user hasn't customized it
                     if (name.isEmpty() || name == phone) name = contact.name
-                    adapter.users += User(key, name, phone)
+                    userAdapter.users += User(key, name, phone)
                 }
-                adapter.notifyDataSetChanged()
+                userAdapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(e: DatabaseError) {}

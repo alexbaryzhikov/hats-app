@@ -13,6 +13,10 @@ import com.alexbaryzhikov.hatsapp.R
 import com.alexbaryzhikov.hatsapp.model.Message
 import com.alexbaryzhikov.hatsapp.model.auth
 import com.alexbaryzhikov.hatsapp.model.db
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import kotlinx.android.synthetic.main.activity_chat.*
 import kotlinx.android.synthetic.main.item_message.view.*
 
@@ -21,6 +25,8 @@ private const val TAG = "ChatActivity"
 class ChatActivity : AppCompatActivity() {
 
     private lateinit var chatId: String
+    private lateinit var chatDb: DatabaseReference
+    private val messageAdapter = MessageAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,21 +37,12 @@ class ChatActivity : AppCompatActivity() {
             Log.e(TAG, "onCreate: Error -- chatId is empty")
             finish()
         }
+        chatDb = db.reference.child("chat").child(chatId)
 
         vSend.setOnClickListener { sendMessage() }
 
         initChat()
-    }
-
-    private fun sendMessage() {
-        val text = vInput.text.toString()
-        if (text.isEmpty()) return
-        val uid = auth.uid ?: return
-        val messageDb = db.reference.child("chat").child(chatId).push()
-        val messageMap = mutableMapOf<String, Any>("author" to uid, "text" to text)
-        messageDb.updateChildren(messageMap)
-
-        vInput.text.clear()
+        getMessages()
     }
 
     /** Initializes Chat View and [MessageAdapter]. */
@@ -54,8 +51,43 @@ class ChatActivity : AppCompatActivity() {
             setHasFixedSize(false)
             isNestedScrollingEnabled = false
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
-            adapter = MessageAdapter()
+            adapter = messageAdapter
         }
+    }
+
+    private fun getMessages() {
+        chatDb.addChildEventListener(object : ChildEventListener {
+
+            override fun onChildAdded(snapshot: DataSnapshot, prev: String?) {
+                if (!snapshot.exists()) return
+                val key = snapshot.key ?: return
+                val text = snapshot.child("text").value?.toString() ?: ""
+                val authorId = snapshot.child("authorId").value?.toString() ?: ""
+
+                messageAdapter.messages += Message(key, authorId, text)
+                vMessages.layoutManager?.scrollToPosition(messageAdapter.messages.size - 1)
+                messageAdapter.notifyDataSetChanged()
+            }
+
+            override fun onChildChanged(p0: DataSnapshot, p1: String?) {}
+
+            override fun onChildMoved(p0: DataSnapshot, p1: String?) {}
+
+            override fun onChildRemoved(p0: DataSnapshot) {}
+
+            override fun onCancelled(p0: DatabaseError) {}
+        })
+    }
+
+    private fun sendMessage() {
+        val text = vInput.text.toString()
+        if (text.isEmpty()) return
+        val uid = auth.uid ?: return
+
+        // Create a message record and fill the content fields
+        chatDb.push().updateChildren(mapOf<String, Any>("authorId" to uid, "text" to text))
+
+        vInput.text.clear()
     }
 }
 
@@ -75,7 +107,7 @@ private class MessageAdapter(val messages: MutableList<Message> = mutableListOf(
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         holder.vText.text = messages[position].text
-        holder.vSenderId.text = messages[position].senderId
+        holder.vSenderId.text = messages[position].authorId
     }
 
     override fun getItemCount(): Int = messages.size

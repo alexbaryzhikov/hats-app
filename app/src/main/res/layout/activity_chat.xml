@@ -17,6 +17,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/vImages"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:background="#eee"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/vInput"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <EditText
         android:id="@+id/vInput"
         android:layout_width="0dp"
@@ -24,9 +34,18 @@
         android:hint="@string/message"
         android:inputType="text"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/vSend"
+        app:layout_constraintEnd_toStartOf="@id/vAddImage"
         app:layout_constraintStart_toStartOf="parent"
         tools:ignore="Autofill" />
+
+    <Button
+        android:id="@+id/vAddImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/add_image"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/vSend"
+        app:layout_constraintStart_toEndOf="@id/vInput" />
 
     <Button
         android:id="@+id/vSend"
@@ -35,6 +54,6 @@
         android:text="@string/send_message"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/vInput" />
+        app:layout_constraintStart_toEndOf="@id/vAddImage" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

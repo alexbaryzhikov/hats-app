@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +25,7 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.stfalcon.imageviewer.StfalconImageViewer
 import kotlinx.android.synthetic.main.activity_chat.*
 import kotlinx.android.synthetic.main.item_image.view.*
 import kotlinx.android.synthetic.main.item_message.view.*
@@ -99,10 +101,13 @@ class ChatActivity : AppCompatActivity() {
             override fun onChildAdded(snapshot: DataSnapshot, prev: String?) {
                 if (!snapshot.exists()) return
                 val key = snapshot.key ?: return
-                val text = snapshot.child("text").value?.toString() ?: ""
                 val authorId = snapshot.child("authorId").value?.toString() ?: ""
+                val text = snapshot.child("text").value?.toString() ?: ""
+                val imageUrls: List<String> = snapshot.child("images").run {
+                    if (exists()) children.map { it.value.toString() } else listOf()
+                }
 
-                messageAdapter.messages += Message(key, authorId, text)
+                messageAdapter.messages += Message(key, authorId, text, imageUrls)
                 vMessages.layoutManager?.scrollToPosition(messageAdapter.messages.size - 1)
                 messageAdapter.notifyDataSetChanged()
             }
@@ -177,8 +182,17 @@ private class MessageAdapter(val messages: MutableList<Message> = mutableListOf(
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        holder.vText.text = messages[position].text
-        holder.vSenderId.text = messages[position].authorId
+        val message = messages[position]
+        holder.vText.text = message.text
+        holder.vSenderId.text = message.authorId
+        if (message.imageUrls.isNotEmpty()) with(holder.vViewImages) {
+            setOnClickListener {
+                StfalconImageViewer.Builder<String>(it.context, message.imageUrls) { view, imageUrl ->
+                    Glide.with(it.context).load(Uri.parse(imageUrl)).into(view)
+                }.show()
+            }
+            visibility = View.VISIBLE
+        }
     }
 
     override fun getItemCount(): Int = messages.size
@@ -187,6 +201,7 @@ private class MessageAdapter(val messages: MutableList<Message> = mutableListOf(
 private class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     val vText: TextView = itemView.vText
     val vSenderId: TextView = itemView.vSenderId
+    val vViewImages: Button = itemView.vViewImages
 }
 
 private class ImageUriAdapter(val context: Context, val imageUris: MutableList<String> = mutableListOf()) :

@@ -1,3 +1,18 @@
+buildscript {
+    repositories {
+        maven { url 'https://plugins.gradle.org/m2/'}
+    }
+    dependencies {
+        classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:0.12.1'
+    }
+}
+
+apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'
+
+repositories {
+    maven { url 'https://maven.google.com' }
+}
+
 apply plugin: 'com.android.application'
 
 apply plugin: 'kotlin-android'
@@ -8,6 +23,11 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.alexbaryzhikov.hatsapp"
+        manifestPlaceholders = [
+                onesignal_app_id: '5e68fe1d-fa6b-4fed-9d9b-aa6b65254d7f',
+                // Project number pulled from dashboard, local value is ignored.
+                onesignal_google_project_number: 'REMOTE'
+        ]
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -51,6 +71,9 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.8.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
     implementation 'com.github.stfalcon:stfalcon-imageviewer:0.1.0'
+
+    // OneSignal
+    implementation 'com.onesignal:OneSignal:3.10.6'
 
     // Tests
     testImplementation 'junit:junit:4.12'

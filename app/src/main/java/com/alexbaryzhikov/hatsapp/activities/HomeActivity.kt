@@ -20,6 +20,7 @@ import com.alexbaryzhikov.hatsapp.model.db
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.onesignal.OneSignal
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.item_chat.view.*
 
@@ -33,12 +34,15 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
+        initOneSignal()
+
         vFindUser.setOnClickListener {
             startActivity(Intent(applicationContext, FindUserActivity::class.java))
         }
 
         vLogout.setOnClickListener {
             Log.d(TAG, "Signing out...")
+            OneSignal.setSubscription(false) // unsubscribe from notifications
             auth.signOut()
             startActivity(Intent(applicationContext, LoginActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -49,6 +53,20 @@ class HomeActivity : AppCompatActivity() {
         getPermissions()
         initChats()
         fillChats()
+    }
+
+    /** OneSignal Initialization. */
+    private fun initOneSignal() {
+        OneSignal.startInit(applicationContext)
+            .inFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification)
+            .unsubscribeWhenNotificationsAreDisabled(true)
+            .init()
+        OneSignal.setSubscription(true) // subscribe to notifications
+        OneSignal.idsAvailable { userId, registrationId ->
+            val uid = auth.uid ?: return@idsAvailable
+            db.reference.child("user").child(uid).child("notificationKey").setValue(userId)
+            Log.d(TAG, "initOneSignal: userId=$userId, registrationId=$registrationId")
+        }
     }
 
     /** Initializes Chats View and [ChatAdapter]. */

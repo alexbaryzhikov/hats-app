@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.alexbaryzhikov.hatsapp.R
 import com.alexbaryzhikov.hatsapp.model.Chat
+import com.alexbaryzhikov.hatsapp.model.User
 import com.alexbaryzhikov.hatsapp.model.auth
 import com.alexbaryzhikov.hatsapp.model.db
 import com.google.firebase.database.DataSnapshot
@@ -29,12 +30,16 @@ private const val TAG = "HomeActivity"
 class HomeActivity : AppCompatActivity() {
 
     private val chatAdapter = ChatAdapter()
+    private val users = mutableSetOf<User>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
         initOneSignal()
+        getPermissions()
+        initChats()
+        fillChats()
 
         vFindUser.setOnClickListener {
             startActivity(Intent(applicationContext, FindUserActivity::class.java))
@@ -49,10 +54,6 @@ class HomeActivity : AppCompatActivity() {
             })
             finish()
         }
-
-        getPermissions()
-        initChats()
-        fillChats()
     }
 
     /** OneSignal Initialization. */
@@ -86,12 +87,12 @@ class HomeActivity : AppCompatActivity() {
 
         chatDb.addValueEventListener(object : ValueEventListener {
 
-            override fun onDataChange(data: DataSnapshot) {
-                if (!data.exists()) return
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) return
                 chatAdapter.chats.clear()
-                for (chat in data.children) {
+                for (chat in snapshot.children) {
                     val key = chat.key ?: continue
-                    chatAdapter.chats += Chat(key)
+                    fillChatInfo(key)
                 }
                 chatAdapter.notifyDataSetChanged()
             }
@@ -100,6 +101,40 @@ class HomeActivity : AppCompatActivity() {
         })
     }
 
+    /** Mutates chatAdapter.chats */
+    private fun fillChatInfo(chatId: String) {
+        val chatDb = db.reference.child("chat").child(chatId).child("info")
+        chatDb.addValueEventListener(object : ValueEventListener {
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) return
+                val userIds = snapshot.child("users").children.map { it.key.toString() }
+                chatAdapter.chats += Chat(chatId, userIds)
+                addUsers(userIds)
+            }
+
+            override fun onCancelled(e: DatabaseError) {}
+        })
+    }
+
+    /** Replenishes [users] set with all users from [userIds] list. */
+    private fun addUsers(userIds: List<String>) {
+        val userDb = db.reference.child("user")
+        for (userId in userIds) {
+            userDb.child(userId).addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) return
+                    val name  = snapshot.child("name").value?.toString() ?: return
+                    val notificationKey = snapshot.child("notificationKey").value?.toString() ?: return
+                    val phone  = snapshot.child("phone").value?.toString() ?: return
+                    users += User(userId, name, notificationKey, phone)
+                }
+
+                override fun onCancelled(e: DatabaseError) {}
+            })
+        }
+    }
 
     private fun getPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

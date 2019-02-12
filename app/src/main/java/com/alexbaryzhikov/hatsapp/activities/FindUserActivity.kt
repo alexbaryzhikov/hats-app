@@ -67,15 +67,16 @@ class FindUserActivity : AppCompatActivity() {
 
         query.addListenerForSingleValueEvent(object : ValueEventListener {
 
-            override fun onDataChange(data: DataSnapshot) {
-                if (!data.exists()) return
-                for (child in data.children) {
-                    val key = child.key ?: continue
-                    val phone = child.child("phone").value?.toString() ?: continue
-                    var name = child.child("name").value?.toString() ?: ""
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) return
+                for (user in snapshot.children) {
+                    val key = user.key ?: continue
+                    var name = user.child("name").value?.toString() ?: ""
+                    val notificationKey = user.child("notificationKey").value?.toString() ?: ""
+                    val phone = user.child("phone").value?.toString() ?: continue
                     // Change name to contact name if user hasn't customized it
                     if (name.isEmpty() || name == phone) name = contact.name
-                    userAdapter.users += User(key, name, phone)
+                    userAdapter.users += User(key, name, notificationKey, phone)
                 }
                 userAdapter.notifyDataSetChanged()
             }
@@ -104,7 +105,7 @@ private class UserAdapter(val users: MutableList<User> = mutableListOf()) : Recy
             val key = db.reference.child("chat").push().key
             if (key != null && uid != null) {
                 db.reference.child("user").child(uid).child("chat").child(key).setValue(true)
-                db.reference.child("user").child(users[position].uid).child("chat").child(key).setValue(true)
+                db.reference.child("user").child(users[position].id).child("chat").child(key).setValue(true)
             }
         }
     }

@@ -17,6 +17,7 @@ fun ContentResolver.getContacts(): List<User> = query(
             User(
                 "",
                 getString(getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)),
+                "",
                 getString(getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
             )
         }
@@ -33,7 +34,7 @@ fun String.toPhonePrefix(): String = countryCodes[this] ?: ""
 fun User.normalizePhone(defaultPrefix: String): User {
     val normalized = phone.filterNot { it in charArrayOf(' ', '-', '(', ')') }
         .let { if (it[0] != '+') defaultPrefix + it else it }
-    return User(uid, name, normalized)
+    return User(id, name, notificationKey, normalized)
 }
 
 /** Send notification via OneSignal. */

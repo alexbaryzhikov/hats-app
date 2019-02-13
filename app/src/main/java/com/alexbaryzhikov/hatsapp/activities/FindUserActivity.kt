@@ -32,7 +32,6 @@ class FindUserActivity : AppCompatActivity() {
         setContentView(R.layout.activity_find_user)
 
         initUsers()
-        fillUsers()
     }
 
     /** Initializes Users View and [UserAdapter]. */
@@ -43,6 +42,7 @@ class FindUserActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
             adapter = userAdapter
         }
+        fillUsers()
     }
 
     /**
@@ -99,18 +99,24 @@ private class UserAdapter(val users: MutableList<User> = mutableListOf()) : Recy
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         holder.vName.text = users[position].name
         holder.vPhone.text = users[position].phone
-        holder.vUser.setOnClickListener {
-            // Create chat with unique id and add reference to it to both users
-            val uid = auth.uid
-            val key = db.reference.child("chat").push().key
-            if (key != null && uid != null) {
-                db.reference.child("user").child(uid).child("chat").child(key).setValue(true)
-                db.reference.child("user").child(users[position].id).child("chat").child(key).setValue(true)
-            }
-        }
+        holder.vUser.setOnClickListener { createChat(position) }
     }
 
     override fun getItemCount(): Int = users.size
+
+    /** Create chat with unique id and add reference to it to both users. */
+    private fun createChat(position: Int) {
+        val uid = auth.uid ?: return
+        val key = db.reference.child("chat").push().key ?: return
+
+        val chatInfo = mapOf("users/$uid" to true, "users/${users[position].id}" to true)
+        val chatInfoDb = db.reference.child("chat").child(key).child("info")
+        chatInfoDb.updateChildren(chatInfo)
+
+        val userDb = db.reference.child("user")
+        userDb.child(uid).child("chat").child(key).setValue(true)
+        userDb.child(users[position].id).child("chat").child(key).setValue(true)
+    }
 }
 
 private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

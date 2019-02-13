@@ -16,15 +16,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.alexbaryzhikov.hatsapp.R
-import com.alexbaryzhikov.hatsapp.model.Message
-import com.alexbaryzhikov.hatsapp.model.auth
-import com.alexbaryzhikov.hatsapp.model.db
-import com.alexbaryzhikov.hatsapp.model.storage
+import com.alexbaryzhikov.hatsapp.model.*
 import com.bumptech.glide.Glide
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import com.stfalcon.imageviewer.StfalconImageViewer
 import kotlinx.android.synthetic.main.activity_chat.*
 import kotlinx.android.synthetic.main.item_image.view.*
@@ -36,27 +33,21 @@ private const val GET_IMAGES_CODE = 1
 
 class ChatActivity : AppCompatActivity() {
 
-    private lateinit var chatId: String
-    private lateinit var chatDb: DatabaseReference
+    private lateinit var chat: Chat
     private val messageAdapter = MessageAdapter()
     private val imageUriAdapter = ImageUriAdapter(this)
+    private val users = mutableSetOf<User>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        chatId = intent?.extras?.getString("chatId") ?: ""
-        if (chatId.isEmpty()) {
-            Log.e(TAG, "onCreate: Error -- chatId is empty")
-            finish()
-        }
-        chatDb = db.reference.child("chat").child(chatId)
+        chat = intent.getSerializableExtra("chat") as Chat
+
+        initChat()
 
         vSend.setOnClickListener { sendMessage() }
         vAddImage.setOnClickListener { openGallery() }
-
-        initChat()
-        getMessages()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -93,10 +84,32 @@ class ChatActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.HORIZONTAL, false)
             adapter = imageUriAdapter
         }
+        getUsers(chat.userIds)
+        getMessages()
+    }
+
+    /** Replenishes [users] set with all users from [userIds] list. */
+    private fun getUsers(userIds: List<String>) {
+        val userDb = db.reference.child("user")
+        for (userId in userIds) {
+            userDb.child(userId).addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) return
+                    val name = snapshot.child("name").value?.toString() ?: return
+                    val notificationKey = snapshot.child("notificationKey").value?.toString() ?: return
+                    val phone = snapshot.child("phone").value?.toString() ?: return
+                    users += User(userId, name, notificationKey, phone)
+                }
+
+                override fun onCancelled(e: DatabaseError) {}
+            })
+        }
     }
 
     private fun getMessages() {
-        chatDb.addChildEventListener(object : ChildEventListener {
+        val messagesDb = db.reference.child("chat").child(chat.id).child("messages")
+        messagesDb.addChildEventListener(object : ChildEventListener {
 
             override fun onChildAdded(snapshot: DataSnapshot, prev: String?) {
                 if (!snapshot.exists()) return
@@ -123,22 +136,24 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun sendMessage() {
-        val text = vInput.text.toString()
         val uid = auth.uid ?: return
+        val text = vInput.text.toString()
+        val imageUris = imageUriAdapter.imageUris
+        if (text.isEmpty() && imageUris.isEmpty()) return
 
         // Create a message record and fill the content fields
-        val messageId = chatDb.push().key ?: return
-        val messageDb = chatDb.child(messageId)
+        val messagesDb = db.reference.child("chat").child(chat.id).child("messages")
+        val messageId = messagesDb.push().key ?: return
+        val messageDb = messagesDb.child(messageId)
         val messageMap = mutableMapOf<String, Any>("authorId" to uid)
         if (!text.isEmpty()) messageMap += "text" to text
 
         // Upload images if any and update DB with message record
-        val imageUris = imageUriAdapter.imageUris
         val uploaded = AtomicInteger(0)
         when {
             !imageUris.isEmpty() -> imageUris.forEach {
                 val imageId = messageDb.child("images").push().key ?: return@forEach
-                val filePath = storage.reference.child("chat").child(chatId).child(messageId).child(imageId)
+                val filePath = storage.reference.child("chat").child(chat.id).child(messageId).child(imageId)
                 val uploadTask = filePath.putFile(Uri.parse(it))
                 uploadTask.addOnSuccessListener {
                     filePath.downloadUrl.addOnSuccessListener { uri ->
@@ -150,6 +165,10 @@ class ChatActivity : AppCompatActivity() {
             }
             !text.isEmpty() -> messageDb.updateChildren(messageMap)
         }
+
+        // Send notifications
+        val msg = if (!text.isEmpty()) text else "[Pictures...]"
+        users.filter { it.id != uid }.forEach { msg.sendNotification("New message", it.notificationKey) }
 
         // Clear views
         vInput.text.clear()

@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.alexbaryzhikov.hatsapp.R
 import com.alexbaryzhikov.hatsapp.model.Chat
-import com.alexbaryzhikov.hatsapp.model.User
 import com.alexbaryzhikov.hatsapp.model.auth
 import com.alexbaryzhikov.hatsapp.model.db
 import com.google.firebase.database.DataSnapshot
@@ -30,7 +29,6 @@ private const val TAG = "HomeActivity"
 class HomeActivity : AppCompatActivity() {
 
     private val chatAdapter = ChatAdapter()
-    private val users = mutableSetOf<User>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +37,6 @@ class HomeActivity : AppCompatActivity() {
         initOneSignal()
         getPermissions()
         initChats()
-        fillChats()
 
         vFindUser.setOnClickListener {
             startActivity(Intent(applicationContext, FindUserActivity::class.java))
@@ -78,14 +75,15 @@ class HomeActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
             adapter = chatAdapter
         }
+        fillChats()
     }
 
     /** Fills [ChatAdapter] with chats. */
     private fun fillChats() {
         val uid = auth.uid ?: return
-        val chatDb = db.reference.child("user").child(uid).child("chat")
+        val userChatDb = db.reference.child("user").child(uid).child("chat")
 
-        chatDb.addValueEventListener(object : ValueEventListener {
+        userChatDb.addValueEventListener(object : ValueEventListener {
 
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
@@ -94,7 +92,6 @@ class HomeActivity : AppCompatActivity() {
                     val key = chat.key ?: continue
                     fillChatInfo(key)
                 }
-                chatAdapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(e: DatabaseError) {}
@@ -103,37 +100,18 @@ class HomeActivity : AppCompatActivity() {
 
     /** Mutates chatAdapter.chats */
     private fun fillChatInfo(chatId: String) {
-        val chatDb = db.reference.child("chat").child(chatId).child("info")
-        chatDb.addValueEventListener(object : ValueEventListener {
+        val chatInfoDb = db.reference.child("chat").child(chatId).child("info")
+        chatInfoDb.addValueEventListener(object : ValueEventListener {
 
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 val userIds = snapshot.child("users").children.map { it.key.toString() }
                 chatAdapter.chats += Chat(chatId, userIds)
-                addUsers(userIds)
+                chatAdapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(e: DatabaseError) {}
         })
-    }
-
-    /** Replenishes [users] set with all users from [userIds] list. */
-    private fun addUsers(userIds: List<String>) {
-        val userDb = db.reference.child("user")
-        for (userId in userIds) {
-            userDb.child(userId).addValueEventListener(object : ValueEventListener {
-
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) return
-                    val name  = snapshot.child("name").value?.toString() ?: return
-                    val notificationKey = snapshot.child("notificationKey").value?.toString() ?: return
-                    val phone  = snapshot.child("phone").value?.toString() ?: return
-                    users += User(userId, name, notificationKey, phone)
-                }
-
-                override fun onCancelled(e: DatabaseError) {}
-            })
-        }
     }
 
     private fun getPermissions() {
@@ -159,8 +137,7 @@ private class ChatAdapter(val chats: MutableList<Chat> = mutableListOf()) : Recy
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         holder.vTitle.text = chats[position].id
         holder.vChat.setOnClickListener {
-            val bundle = Bundle().apply { putString("chatId", chats[position].id) }
-            val intent = Intent(it.context, ChatActivity::class.java).apply { putExtras(bundle) }
+            val intent = Intent(it.context, ChatActivity::class.java).apply { putExtra("chat", chats[position]) }
             it.context.startActivity(intent)
         }
     }

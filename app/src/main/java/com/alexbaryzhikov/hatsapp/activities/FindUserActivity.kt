@@ -3,11 +3,13 @@ package com.alexbaryzhikov.hatsapp.activities
 import android.content.Context
 import android.os.Bundle
 import android.telephony.TelephonyManager
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.CheckBox
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +25,8 @@ import android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI as PH
 import android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME as PHONE_DISPLAY_NAME
 import android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER as PHONE_NUMBER
 
+private const val TAG = "FindUserActivity"
+
 class FindUserActivity : AppCompatActivity() {
 
     private val userAdapter = UserAdapter()
@@ -32,6 +36,8 @@ class FindUserActivity : AppCompatActivity() {
         setContentView(R.layout.activity_find_user)
 
         initUsers()
+
+        vCreateChat.setOnClickListener { userAdapter.createChat() }
     }
 
     /** Initializes Users View and [UserAdapter]. */
@@ -88,6 +94,8 @@ class FindUserActivity : AppCompatActivity() {
 
 private class UserAdapter(val users: MutableList<User> = mutableListOf()) : RecyclerView.Adapter<UserViewHolder>() {
 
+    private val selectedUsers = mutableSetOf<Int>()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_user, parent, false).apply {
             // Set layout params explicitly to ensure the item view has correct size.
@@ -99,23 +107,38 @@ private class UserAdapter(val users: MutableList<User> = mutableListOf()) : Recy
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         holder.vName.text = users[position].name
         holder.vPhone.text = users[position].phone
-        holder.vUser.setOnClickListener { createChat(position) }
+        holder.vUser.setOnClickListener {
+            it.vAdd.isChecked = !it.vAdd.isChecked
+            selectUser(position, it.vAdd.isChecked)
+        }
+        holder.vAdd.setOnCheckedChangeListener { _, isChecked -> selectUser(position, isChecked) }
+    }
+
+    private fun selectUser(i: Int, checked: Boolean) {
+        if (checked) selectedUsers += i else selectedUsers -= i
     }
 
     override fun getItemCount(): Int = users.size
 
     /** Create chat with unique id and add reference to it to both users. */
-    private fun createChat(position: Int) {
+    fun createChat() {
+        Log.d(TAG, "createChat: selectedUsers=$selectedUsers")
+
+        if (selectedUsers.size == 0) return // do not create empty chat
         val uid = auth.uid ?: return
-        val key = db.reference.child("chat").push().key ?: return
+        val chatId = db.reference.child("chat").push().key ?: return
 
-        val chatInfo = mapOf("users/$uid" to true, "users/${users[position].id}" to true)
-        val chatInfoDb = db.reference.child("chat").child(key).child("info")
-        chatInfoDb.updateChildren(chatInfo)
+        // Add user to chat info
+        val chatDb = db.reference.child("chat").child(chatId)
+        val chatUsers = selectedUsers.fold(mutableMapOf<String, Any>("users/$uid" to true)) { acc, i ->
+            acc.apply { put("users/${users[i].id}", true) }
+        }
+        chatDb.updateChildren(chatUsers)
 
+        // Add chat to each user's chat list
         val userDb = db.reference.child("user")
-        userDb.child(uid).child("chat").child(key).setValue(true)
-        userDb.child(users[position].id).child("chat").child(key).setValue(true)
+        userDb.child(uid).child("chat").child(chatId).setValue(true)
+        for (i in selectedUsers) userDb.child(users[i].id).child("chat").child(chatId).setValue(true)
     }
 }
 
@@ -123,4 +146,5 @@ private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
     val vUser: ViewGroup = itemView.vUser
     val vName: TextView = itemView.vName
     val vPhone: TextView = itemView.vPhone
+    val vAdd: CheckBox = itemView.vAdd
 }

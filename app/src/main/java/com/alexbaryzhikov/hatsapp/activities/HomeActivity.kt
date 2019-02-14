@@ -90,7 +90,7 @@ class HomeActivity : AppCompatActivity() {
                 chatAdapter.chats.clear()
                 for (chat in snapshot.children) {
                     val key = chat.key ?: continue
-                    fillChatInfo(key)
+                    fillChatUsers(key)
                 }
             }
 
@@ -99,13 +99,13 @@ class HomeActivity : AppCompatActivity() {
     }
 
     /** Mutates chatAdapter.chats */
-    private fun fillChatInfo(chatId: String) {
-        val chatInfoDb = db.reference.child("chat").child(chatId).child("info")
-        chatInfoDb.addValueEventListener(object : ValueEventListener {
+    private fun fillChatUsers(chatId: String) {
+        val chatDb = db.reference.child("chat").child(chatId).child("users")
+        chatDb.addListenerForSingleValueEvent(object : ValueEventListener {
 
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
-                val userIds = snapshot.child("users").children.map { it.key.toString() }
+                val userIds = snapshot.children.map { it.key.toString() }
                 chatAdapter.chats += Chat(chatId, userIds)
                 chatAdapter.notifyDataSetChanged()
             }
